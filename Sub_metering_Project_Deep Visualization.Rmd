@@ -1,0 +1,955 @@
+---
+title: "Sub_metering Analytics Project"
+author: "Itoro_E"
+date: "7/16/2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+1. INTRODUCTION
+The second task of this project is to perform an in-depth analysis of the power consumption data set from a data scientist perspective. This will be presented to management for a propective IoT home developer. 
+This is accomplished via data visualization and time series regression modeling. 
+
+The Following Steps Are Followed:
+Step 1 - Subset of Data and Granularity
+Subsetting the data into meaningful time periods for insights into the sub-metered energy consumption and application of granularity. Such insight could be used as incentive to potential home buyers interested in “smart home” technology.
+
+Step 2 - Exploration of The Data Using Visualization Techniques
+The most information-laden visualizations are selected for presentation during this process. 
+
+Step 3 - Time Series Regression Models for Both Seasonal and Non-Seasonal Forcasting
+Three different time series regression models are developed and work with seasonal and non-seasonal forecasting. 
+
+Step 4 - Summary of The Analysis and Recommendations Report to The Client.
+
+Task One
+The initial report on Task One of this project already defined the business objectives.
+The high-level business objective Outlined In Initial Presentation Report To IoT Client Are:
+
+1. Determine if the installation of sub-metering devices to measure power consumption can translate into economic incentive homeowners and the client.
+2. Determine what kind of analytics and visualizations Could be obtained from the data about energy consumptiont.
+3. The IoT client’s goal is to offer highly efficient Smart Homes that provide customers with power usage analytics. Hoping that these analytics will help to grow their business.
+
+Analytical Focus Points:
+(i). Sub-metered energy consumption data that provides enough granularity to uncover trends in Sub-meters areas in the home.
+(ii). Peak energy usage can be identified allowing for possible modification of behavior to take advantage of off-peak electricity rates.
+(iii). Patterns of energy usage that can be used to predict future usage.
+
+2. LOAD/CONNECTING TO CLIENT RAW DATA
+The following R packages are used to perform data analysis and visualization of time series data set:
+```{r}
+# Load packages
+#install.packages("RMySQL")
+#install.packages("magrittr")
+#install.packages("ggfortify")
+#install.packages("forecast")
+```
+
+```{r}
+library(RMySQL)
+library(DBI)
+library(magrittr)
+library(pacman)
+library(Hmisc)      #for descriptive statistics
+library(tidyverse)  #Package for tidying data
+library(lubridate)  #For working with dates/times of a time series
+library(VIM)        #Visualizing and imputing missing values
+library(broom)      #Tidy statistical summary output
+library(knitr)      #report generation
+library(kableExtra) #fancy table generator
+library(psych)
+library(lattice)
+library(survival)
+library(Formula)
+library(ggfortify)
+library(forecast)
+library(plotly)
+library(ggplot2)
+```
+
+Create a database connection to extract data
+```{r}
+ con = dbConnect(MySQL(), user='deepAnalytics', password='Sqltask1234!',
+                 dbname='dataanalytics2018', host='data-analytics-2018.cbrosir2cswx.us-east-1.rds.amazonaws.com')
+```
+
+Use RMySQL to connect to the database to retrieve it contents. List tables contained in the database
+```{r}
+dbListTables(con)
+```
+
+Use the dbGetQuery function to download tables 2006 through 2010 with the specified attributes
+```{r}
+yr_2006ALL <- dbGetQuery(con, "SELECT * FROM yr_2006")
+yr_2007ALL <- dbGetQuery(con, "SELECT * FROM yr_2007")
+yr_2008ALL <- dbGetQuery(con, "SELECT * FROM yr_2008")
+yr_2009ALL <- dbGetQuery(con, "SELECT * FROM yr_2009")
+yr_2010ALL <- dbGetQuery(con, "SELECT * FROM yr_2010")
+```
+
+With data loaded, the summary() and head() functions are used to look at the structure of the data set.
+Create a Multi-Year data frame to serve as the primary data frame for this project.
+using dplyr function “bind_rows"
+Combine tables or df (ONLY includes the df that span an entire year: 2007, 2008, 2009)
+```{r}
+newDF <- dplyr::bind_rows(yr_2007ALL, yr_2008ALL, yr_2009ALL)
+```
+
+Gather Summary Statistics
+mean, mode, standard deviation, quartiles & characterization of the distribution
+```{r}
+# Summary statistics for newDF data features
+summary(newDF)
+#gather(newDF)
+```
+
+Dealing with Missing Values (NA)
+```{r}
+#-Check that there are no missing values remaining after removing year 2006
+sum(is.na(newDF))
+```
+From the output of the summary of the data frame, 'newDF' we can see that there are 1,569,894 observations. The summary statistics of the features show that there are no missing values (NA).
+
+```{r}
+#-Look at the head (top) several rows of data set
+head(newDF)
+```
+
+3 DATA MUNGING - DATA PROCESSING
+Here, data munging of newDF to create a 'DateTime' attribute by combining the 'Date' and 'Time' col within data frame. This data processing steps is used to get the data ready for exploratory analysis and modeling.
+
+3.1 Using 'cbind' function  to combine the 'Date' and 'Time' features to create a ‘DateTime’ feature  from tidyr. The header name for new 'DateTime' attribute in the 11th column is addressed.
+The cryptic coding used for the format is explained in R’s help section (type ?strptime).
+```{r}
+## Combining the Date and Time columns with 'cbind' function 
+newDF1 <-cbind(newDF,paste(newDF$Date,newDF$Time), stringsAsFactors=FALSE)
+```
+
+```{r}
+## Header name for new attribute in the 11th column
+colnames(newDF1)[11] <-"DateTime"
+```
+
+```{r}
+## Move the DateTime attribute within the dataset to make it first column
+newDF2 <- newDF1[,c(ncol(newDF1), 1:(ncol(newDF1)-1))]
+```
+
+```{r}
+## Using "SELECT" function to DROP old "Date" and "Time" columns from newDF2
+newDF3 <- dplyr::select(newDF2, -c(Date,Time, id))
+```
+
+3.2 Convert DateTime Data Type To Time Series Using POSIXct () function That R Understands.
+After combining Date and Time columns, the DateTime feature is of the character class. Therefore, POSIXct() function is used to convert it into the proper class using the format argument to describe the format of the date-time feature.
+
+```{r}
+newDF3$DateTime <- as.POSIXct(newDF3$DateTime, format = "%Y%m%d %H:%M:%S")
+
+```
+
+```{r}
+## setting of Time Zone to Central Time Zone
+attr(newDF3$DateTime, "tzone") <- "America/Chicago"
+```
+
+```{r}
+#newDF3$DateTime
+```
+
+```{r}
+## Confirm class of new DateTime feature is converted
+# class(newDF3$DateTime)
+```
+
+```{r}
+str(newDF3)
+```
+
+```{r}
+# mean(is.na(newDF3))
+```
+
+```{r}
+# df <- na.omit(newDF3)
+# view(df)
+```
+
+Using Lubridate to create attributes for quarter, month, week, weekday, day, hour and minute
+```{r}
+newDF3$year <- year(newDF3$DateTime)
+newDF3$quarter <- quarter(newDF3$DateTime)
+newDF3$month <- month(newDF3$DateTime)
+newDF3$week <- week(newDF3$DateTime)
+newDF3$day <- day(newDF3$DateTime)
+newDF3$weekDay <- wday(newDF3$DateTime)
+newDF3$hour <- hour(newDF3$DateTime)
+newDF3$minute <- minute(newDF3$DateTime)
+```
+
+4. SUBSET, VISUALIZE AND ANALYZE THE DATA
+
+4.1 Granularity - Subsetting and Meaningful Time Periods
+One of the goals of subsetting for visualizations is to adjust granularity to maximize the information to be gained. Granularity describes the frequency of observations within a time series data set. From the data description we know that the observations were taken once per minute over the period of almost 4 years. That's over 2 million observations from the raw data prior to initial data munging. The new data set newDF with over 1.5 million observations needs to be subset into meaningful time periods for better visualizations and insight analysis.
+
+4.1.1 Week Visualization and Analysis - Second Week of 2008
+```{r}
+## Subset the second week of 2008 - All Observations
+Week_2008 <- filter(newDF3, year == 2008 & week == 2)
+```
+
+Plot Week Visualization - Second Week of 2008
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - All observations 
+plot_ly(Week_2008, x = ~Week_2008$DateTime, y = ~Week_2008$Sub_metering_1, name = 'Kitchen',
+        type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~Week_2008$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~Week_2008$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption Second Week 2008",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+```
+
+4.1.2 Day Visualization and Analysis - Day 9 of January 2008
+```{r}
+# Subset the 9th day of January 2008 - All observations
+House_9thDay <- filter(newDF3, year == 2008 & month == 1 & day == 9)
+```
+
+First, looking at a single day visualization on all three Sub-meters using scatter lines.
+We could see energy usage peaks at different times of the day in Sub-meter 3 area. 
+The kitchen area only has high energy consumption between 10 AM and 1 PM.
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - All observations 
+plot_ly(House_9thDay, x = ~House_9thDay$DateTime, y = ~House_9thDay$Sub_metering_1, name = 'Kitchen',
+        type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~House_9thDay$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~House_9thDay$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption January 9th, 2008",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+```
+
+4.1.3 Minute Visualization and Analysis - January 9th (Granularity Adjusted)
+
+Day Visualization - 30 minute Frequency
+```{r}
+## Subset the 9th day of January 2008 - 30min frequency
+House_30min <- filter(newDF3, year == 2008 & month == 1 & day == 9 & (minute == 0 | minute == 30 | minute == 60))
+```
+
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - 30min frequency
+plot_ly(House_30min, x = ~House_30min$DateTime, y = ~House_30min$Sub_metering_1, name = 'Kitchen', type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~House_30min$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~House_30min$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption January 9th, 2008",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+
+```
+
+Day Visualization - 10 Minute Frequency
+```{r}
+## Subset the 9th day of January 2008 - 10 Minute frequency
+House_10min <- filter(newDF3, year == 2008 & month == 1 & day == 9 & (minute == 0 | minute == 10 | minute == 20 | minute == 30 | minute == 40 | minute == 50))
+```
+
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - 10 Minute frequency
+plot_ly(House_10min, x = ~House_10min$DateTime, y = ~House_10min$Sub_metering_1, name = 'Kitchen', type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~House_10min$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~House_10min$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption January 9th, 2008",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+
+```
+
+Sub-meter 3
+With the granularity adjusted we get a much more clear picture of the power consumption on January 9th.
+1. The graph shows higher energy usage in Sub-meter 3 between 11 PM and 6 AM the following day.
+2. Considering the seasonality of the period, this peaks might represent the water heater usage because  the home may not need AC usage in winter period. 
+3. Water heater might be used around 6:30 AM for bathing.
+4. It is also possible that the home uses more hot water for dish washing and every running water activities in the house due to cold weather. 
+5. The spike in energy usage in Sub-meter 3 may not be realated to AC usage, since this is a month in CST
+6. There seems to high energy usage at midnight (10 PM - 1 AM). Again, from 1:40PM to about 4 PM)
+
+Sub-meter 2
+7. Energy usage seems to peak every 2 to 2 1/2 hours throughout the day in the laundry area.
+8. There may be an energy regulator device or energy saving appliances in the laundry area.
+
+Sub-meter 1
+The homeowner uses more energy for kitchen appliances between 10:40 AM and 11:10 AM but once during the day.The information in these data is limited. A pattern and trend may be required to make decision.
+
+Comparison of Same Days in Two Different Years
+```{r}
+## Subset the 9th day of January 2009 - 10min frequency to See if Different from same day 2008
+House_10min09 <- filter(newDF3, year == 2009 & month == 1 & day == 9 & (minute == 0 | minute == 10 | minute == 20 | minute == 30 | minute == 40 | minute == 50))
+```
+
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - 10min frequency for 2009
+plot_ly(House_10min09, x = ~House_10min09$DateTime, y = ~House_10min09$Sub_metering_1, name = 'Kitchen', type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~House_10min09$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~House_10min09$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption January 9th, 2009",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+```
+
+Pattern:
+1. Comparing January 9th of 2008 to similar date in 2009, there seems to be a pattern of high energy peak in Sub-meter 3 during same time periods of the day. Higher energy usage in at midnight, early morning, and mid-afternoon.
+2. Small energy peaks in laundry area every 2 to 2 1/2 hours.
+3. The homeowner also seems to use high energy in the kitchen area once a day but different time periods.
+
+5.0 CREATING VISUALIZATION OF A RANDOM SUMMER WEEK, DAY, MINUTES IN 2007 & 2009 
+
+5.1 Creating visualization with plotly for a random Week 
+Using all three sub-meters. Experiment with granularity. 
+```{r}
+## Subset the 28 week of 2009 - All Observations (Insight of mid summer)
+Week_2009 <- filter(newDF3, year == 2009 & week == 28)
+```
+
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - All observations 
+plot_ly(Week_2009, x = ~Week_2009$DateTime, y = ~Week_2009$Sub_metering_1, name = 'Kitchen',
+        type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~Week_2009$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~Week_2009$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption Week 28, 2009",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+```
+
+5.2 Creating visualization for a random Day. 
+Using all three sub-meters. Experiment with granularity.
+```{r}
+# Subset the 5th day of July 2009 - All observations
+House_July5 <- filter(newDF3, year == 2009 & month == 7 & day == 5)
+```
+
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - All observations 
+plot_ly(House_July5, x = ~House_July5$DateTime, y = ~House_July5$Sub_metering_1, name = 'Kitchen',
+        type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~House_July5$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~House_July5$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption July 5th, 2009",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+```
+
+Looking with the Granularity adjustment for clearer picture
+```{r}
+## Subset the 5th day of July 2009 - 10min frequency
+House_10min_July <- filter(newDF3, year == 2009 & month == 7 & day == 5 & (minute == 0 | minute == 10 | minute == 20 | minute == 30 | minute == 40 | minute == 50))
+```
+
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - 10min frequency for 2009
+plot_ly(House_10min_July, x = ~House_10min_July$DateTime, y = ~House_10min_July$Sub_metering_1, name = 'Kitchen', type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~House_10min_July$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~House_10min_July$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption July 5th, 2009",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+```
+
+Insight Summer 2009:
+a. Sub-meter 3 energy usage peaked often during day and night in summer. Possible due to more AC usage.
+b. Kitchen appliances energy usage also increase to 4 times during the day but not often as AC/water heater
+c. Laundry energy usage peaked once.
+Note: add same time period for two years to compare
+
+5.4 Visualization for a summer time period in 2007. 
+Both "Day" and "Week" highlighting typical patterns in a home. 
+Hoping another year period could provide insights using plotly. 
+Experimenting with granularity until a visualization that maximizes information gain. 
+
+5.4.1 Creating visualization with plotly for a random Week. 
+Using all three sub-meters. Experiment with granularity.
+```{r}
+## Subset the week 28 of 2007 - All Observations Summer 2007
+Week_2007 <- filter(newDF3, year == 2007 & week == 28)
+```
+
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - All observations for Week 28 Year 2007
+plot_ly(Week_2007, x = ~Week_2007$DateTime, y = ~Week_2007$Sub_metering_1, name = 'Kitchen',
+        type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~Week_2007$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~Week_2007$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption Week 28, 2007",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+```
+
+5.4.2 Creating visualization with plotly for a random Day. 
+Using all three sub-meters. Experiment with granularity.
+```{r}
+# Subset the 9th day of July 2007 - All observations
+Day_July9_2007 <- filter(newDF3, year == 2007 & month == 7 & day == 9)
+```
+
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - All observations 
+plot_ly(Day_July9_2007, x = ~Day_July9_2007$DateTime, y = ~Day_July9_2007$Sub_metering_1, name = 'Kitchen',
+        type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~Day_July9_2007$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~Day_July9_2007$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption July 9th, (mid summer) 2007",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+```
+
+With Granularity adjustment for Minute Frequency
+```{r}
+## Subset the 9th day of July 2007 - 10min frequency
+Day_10min_July <- filter(newDF3, year == 2007 & month == 7 & day == 9 & (minute == 0 | minute == 10 | minute == 20 | minute == 30 | minute == 40 | minute == 50))
+```
+
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - All observations 
+plot_ly(Day_10min_July, x = ~Day_10min_July$DateTime, y = ~Day_10min_July$Sub_metering_1, name = 'Kitchen',
+        type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~Day_10min_July$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~Day_10min_July$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption July 9th, (mid summer) 2007",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+```
+
+Comparing Insights Between Summer 2007 and 2009:
+
+a. Sub-meter 3 energy usage peaked often during day and night in summer. Possibly due to more AC usage.
+b. Kitchen appliances energy usage dropped.
+c. Laundry energy usage remain on 2 to 2 1/2 peak intervals.
+d. Through data visualization, we are able to identify trends and patterns in energy consumption leading to insights that may be potential to save money. There's a clear high energy consumption in the early hours of the day in Sub-meter 3. This could be as a result of a faulty water heater or AC or inefficient appliance in the home. Both summers of 2007 and 2009 show similar high energy usage during same periods of the day.
+e. Additional opportunity to monitor the health of an appliance would be to compare actual energy consumption to projected consumption. If actual consumption fell out of the projected range, the homeowner could be alerted that maintenance may be required and thereby avoiding a costly and disruptive failure of an appliance. To do this, we’ll convert a subset of the data to a time series object and then use the forecast() function to predict energy consumption.
+
+
+```{r}
+#newDF3$DateTime <- as.Date(newDF3$DateTime)
+#create a vector of weekdays
+#weekdays1 <- c('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')
+```
+```{r}
+#Use `%in%` and `weekdays` to create a logical vector
+#convert to `factor` and specify the `levels/labels`
+#newDF3$wDay <- factor((weekdays(newDF3$DateTime) %in% weekdays1), 
+#         levels=c(FALSE, TRUE), labels=c('weekend', 'weekday')) 
+#newDF3$wDay <- c('weekend', 'weekday')[(weekdays(newDF3$DateTime) %in% weekdays1)+1L]
+```
+
+6. FURTHER EXPLORATION BY WINTER AND SUMMER PERIODS FOR ANY ADDITIONAL INSIGHTS
+
+6.1 Create long form of data set using gather() function. This allows us to take the SUM of all three Sub-meters.
+```{r}
+HousePWR <- newDF3 %>%
+  gather(Meter, Watt_hr, `Sub_metering_1`, `Sub_metering_2`, `Sub_metering_3`)
+```
+
+```{r}
+#-remove data from year 2006
+#HousePWR <- filter(HousePWR, year(DateTime) != 2006)
+```
+
+```{r}
+#-Check that there are no missing values remaining
+sum(is.na(HousePWR))
+```
+
+The Meter variable is converted to a factor and the data types are checked with the glimpse() to ensure conversion before moving on to further exploratory data analysis.
+```{r}
+#-Convert Meter feature to categorical
+HousePWR$Meter <- factor(HousePWR$Meter)
+  
+#-peak at data 
+#glimpse(house_PWR)
+```
+
+6.2 Visualization and Analysis Using Bar Chart
+```{r}
+#Hour of day bar chart
+# HousePWR %>%
+#   filter(month(DateTime) == c(1,2,11,12)) %>%
+#   group_by(hour(DateTime), Meter) %>%
+#   summarise(sum=round(sum(Watt_hr)),3) %>%
+#   ggplot(aes(x=factor(`hour(DateTime)`), y=sum)) +
+#   labs(x='Hour of the Day', y='Power (watt-hours)') +
+#   ggtitle('Total Energy Usage by Hour of the Day') +
+#   geom_bar(stat='identity', aes(fill = Meter), colour='black') +
+#   theme(panel.border=element_rect(colour='black', fill=NA)) +
+#   theme(text = element_text(size = 14))
+```
+
+a. Further insight exploration by hour of the day again confirms interesting trends in energy consumption in the four winter months of the years 2007 to 2010.
+b. Higher energy usage is recorded between 1 AM and 9 AM. and in the afternoon between 1 PM and 3 PM.
+c. Not surprisingly, Sub-meter 3, water hearter/AC area uses higher energy in the early morning hours and mid afternoon hours as seen in previously visualizations.
+d. Clearly, this home is using lot more energy  for water heater. The water heater appliances may be faulty, old, and obviously non energy efficient.
+
+Opportunities/Recommendation:
+1. Assuming local power provider offers lower off-peak rates in the evening 7 PM to 11 PM, this homeowner may be saving on electricity rate by shifting more energy usage particularly, laundry and water heater and AC to those off peak hours. 
+2. Energy usage does seem to decrease during the day, winter lowest energy recorded 7 Pm and 11 PM on all sub-meters.
+3. Mid afternoon shows higher energy consumption on all sub-meters. Reducing energy usage during this period maybe another savings opportunity.
+
+4. Compare High Energy Consumption between Summer and Winter
+Here, looking for insights information on energy consumption by day of the week during two critical periods of the year associated with high energy consumption. A valueble information may provide potential opportunities for homeowner's behavior modification.
+
+7. TIME SERIES VISUALIZATIONS AND ANALYSIS
+
+7.1 With initial visualizations completed, it's time to prepare the data for Time Series Analysis. Store data frame(s) as time series with appropriate start, end, and frequency
+Let's subset the data and then create a Time Series object using the ts() function
+
+```{r}
+## Subset to one observation per week on Mondays at 8:00pm for 2007, 2008 and 2009
+Subset_week <- filter(newDF3, month == 12 & hour == 18 & minute == 1)
+```
+
+7.1.1 Sample Data: chosing Sub-meter 3 with a frequency of 52 weekly observations per year
+Frequency of 52, Start Date of Jan 2007
+```{r}
+# Create Time Series object with Sub-meter3
+tsSM3_070809weekly <- ts(Subset_week$Sub_metering_3, frequency=52, start=c(2007,1))
+```
+
+Produce time series plots on Sub-meter 3
+```{r}
+## Plot sub-meter 3 with autoplot - add labels, color
+autoplot(tsSM3_070809weekly, colour = 'red', xlab = "Time", ylab = "Watt Hours", main = "Sub-meter 3")
+```
+
+```{r}
+#knitr::knit_exit()
+```
+
+Other Visualization Plots on Sub-meter 3
+```{r}
+## Plot sub-meter 3 with autoplot
+autoplot(tsSM3_070809weekly)
+```
+
+```{r}
+## Plot sub-meter 3 with plot.ts
+plot.ts(tsSM3_070809weekly)
+```
+Considering the plots above "autoplot" with labels and color, we can see the same energy consumption similarity patterns observed by comparing years 2007 to 2009 both in the bar charts and scatter lines in previously analysis does indeed repeat over time for Sub-meter 3. 
+
+7.1.2 Sub-meter 1 Time Series Visualization With Frequency of 52 Same Time Period
+```{r}
+# Create Time Series object with Sub-meter 1
+tsSM1_070809weekly <- ts(Subset_week$Sub_metering_1, frequency=52, start=c(2007,1))
+```
+
+```{r}
+## Plot Sub-meter 1 with autoplot - add labels, color
+autoplot(tsSM1_070809weekly, colour = 'red', xlab = "Time", ylab = "Watt Hours", main = "Sub-meter 1")
+```
+From the plots above, we can see the same energy low energy consumption similar patterns observed when comparing years 2007 to 2009 both in the bar charts and scatter lines in previous analysis does indeed repeat here for Sub-meter 1. 
+
+7.1.3 Sub-meter 2 Time Series Visualization With Frequency of 52 Same Time Period
+```{r}
+# Create Time Series object with Sub-meter 2
+tsSM2_070809weekly <- ts(Subset_week$Sub_metering_2, frequency=52, start=c(2007,1))
+```
+
+```{r}
+## Plot Sub-meter 2 with autoplot - add labels, color
+autoplot(tsSM2_070809weekly, colour = 'red', xlab = "Time", ylab = "Watt Hours", main = "Sub-meter 2")
+```
+Same patterns is observed here in Sub-meter 2 from the graph above.
+
+8. FORCASTING/PREDICTING A TIME SERIES SUB-METER OBJECTS
+
+Focusing on submeter 3 which accounts for a majority of the total Sub-meter energy consumption. 
+Using Linear Regression model lm() for prediction and forcasting. Let's first fit a linear model to the weekly data previosuly created. Before using these models to forecast future energy usage, let look at some of the assumptions of a linear regression model to determine if using a linear model is appropraite for this subset time series data.
+
+8.1 Using Linear Regression (lm) to model to predict the trend in time series data.
+Create three different time series linear models -- for three different time periods using the tslm and forecast functions. We'll also forecast the trends of each time series model created.
+```{r}
+## Apply time series linear regression to the sub-meter 3 ts object
+fitSM3 <- tslm(tsSM3_070809weekly ~ trend + season) 
+```
+
+```{r}
+#use summary to obtain R2 and RMSE from the model
+#summary(fitSM3)
+#-One-line statistical summary for the linear model.
+glance(fitSM3)
+```
+
+Calculate RMSE
+```{r}
+# Function for Root Mean Squared Error
+RMSE <- function(error) { sqrt(mean(error^2)) }
+RMSE(fitSM3$residuals)
+```
+a). The summary() output provides a quick assessment of the model. However, using glance() it provides easy to read tabular outputs.
+b). Interestingly, the R-squared:  0.392 is significantly very low, and the p-value: 0.1367 does not seem to signify that at least one of the predictors or predictor(s) jointly are statistically significant.With a very low R-squared from 1, we could mean that the linear regression line or model was not a good fit.
+c). RMSE 5.85 indicates the absolute fit of the linear regression model to the data, which is how close the observed data points are the predicted values. Obviously, the lower the RMSE, the better the model fits.
+
+```{r}
+#-Tabular summary of the linear model.
+tidy(fitSM3)
+```
+The output from the tidy() function tabulates the coefficient estimates with the corresponding standard error and the p-value for the 52 weeks (season) period.
+
+8.2.1 Forcasting For Sub-meter 3
+With the above analysis supporting the legitimacy of our linear models, we can feel more confident using it to make predictions for a time period energy consumption on submeter 3 using the forecast() function
+```{r}
+## Create the forecast for sub-meter 3. Forecast ahead 18 time periods 
+forecastfitSM3 <- forecast(fitSM3, h=18)
+```
+
+```{r}
+## Plot the forecast for sub-meter 3. 
+plot(forecastfitSM3)
+```
+
+```{r}
+## Create Sub-meter 3 forecast with confidence levels 80 and 90
+forecastfitSM3c <- forecast(fitSM3, h=18, level=c(80,90))
+```
+
+Change the confidence levels and plot only the forecast portion that is above zero. 
+```{r}
+## Plot Sub-meter 3 forecast, limit y and add labels
+plot(forecastfitSM3, ylim = c(0, 18), ylab= "Watt-Hours", xlab="Time")
+```
+Insight Analysis:
+1. To make a forecast with Sub-meter 3 linear model, we pass the model, the number of time periods, and the confidence level for the prediction interval.
+2. The forcast plot above shows a trend line plot of the predicted values with the 80 and 90% prediction intervals. Sub-meter 3 is predicted to continue with high energy peaks but lower energy consumption in the future. The trend shows skewed pattern from historical trends analysed.
+3. Actual energy consumption that falls outside of a predicted interval could alert of a potential issue with an appliance.
+4. This forcast shows that this area of the house will continue with high energy consumption if no measure is taken to address energy usage.
+5. The dark grey areas are 80% prediction intervals and the light grey the 90% prediction interval. The dark blue line is the average of the forecasted points. 
+
+8.2.2 Additional Visualizations, Analysis and Forcasting For Sub-meters 1 and 2:
+
+Sub-meter 1 with same frequency, time period and confidence levels used for Sub-meter 3
+```{r}
+## Apply time series linear regression to the sub-meter 1 ts object
+fitSM1 <- tslm(tsSM1_070809weekly ~ trend + season) 
+```
+
+```{r}
+#use summary to obtain R2 and RMSE from the model you built
+#summary(fitSM1)
+glance(fitSM1)
+```
+
+Calculate RMSE
+```{r}
+# Function for Root Mean Squared Error
+RMSE1 <- function(error) { sqrt(mean(error^2)) }
+RMSE1(fitSM1$residuals)
+```
+
+Forcasting For Sub-meter 1
+```{r}
+## Create the forecast for sub-meter 1. Forecast ahead 18 time periods 
+forecastfitSM1 <- forecast(fitSM1, h=18)
+```
+
+```{r}
+## Plot the forecast for sub-meter 1. 
+plot(forecastfitSM1)
+```
+
+Fine Tuning
+```{r}
+## Create Sub-meter 1 forecast with confidence levels 80 and 90
+forecastfitSM1 <- forecast(fitSM1, h=18, level=c(80,90))
+```
+
+```{r}
+## Plot Sub-meter 1 forecast, limit y and add labels
+plot(forecastfitSM1, ylim = c(0, 20), ylab= "Watt-Hours", xlab="Time")
+```
+Insight Analysis:
+1. The forcast plot above shows a trend line plot of the predicted values with the 80 and 90% prediction intervals. Sub-meter 1 is predicted to continue lowest energy consumption in the future among the three Sub-meters. The trend shows similar pattern from historical trends analysed.
+3. Actual energy consumption that falls outside of a predicted interval could alert of a potential issue with an appliances in the area.
+
+Sub-meter 2 with similar frequency, time period and confidence levels
+```{r}
+## Apply time series linear regression to the sub-meter 2 ts object
+fitSM2 <- tslm(tsSM2_070809weekly ~ trend + season) 
+```
+
+```{r}
+#use summary to obtain R2 and RMSE from the model you built
+#summary(fitSM2)
+glance(fitSM2)
+```
+
+Calculate RMSE
+```{r}
+# Function for Root Mean Squared Error
+RMSE2 <- function(error) { sqrt(mean(error^2)) }
+RMSE2(fitSM1$residuals)
+```
+
+
+```{r}
+## Create the forecast for sub-meter 2. Forecast ahead 18 time periods 
+forecastfitSM2 <- forecast(fitSM2, h=18)
+```
+
+```{r}
+## Plot the forecast for sub-meter 2. 
+plot(forecastfitSM2)
+```
+
+```{r}
+## Create Sub-meter 2 forecast with confidence levels 80 and 90
+forecastfitSM2 <- forecast(fitSM2, h=18, level=c(80,90))
+```
+
+```{r}
+## Plot Sub-meter 2 forecast, limit y and add labels
+plot(forecastfitSM2, ylim = c(0, 18), ylab= "Watt-Hours", xlab="Time")
+```
+Insight Analysis:
+1. The forcast plot above shows a trend line plot of the predicted values with the 80 and 90% prediction intervals. Sub-meter 2 is predicted to continue low energy consumption in the future. The trend shows energy consumption will drop in the near future but increases in later future time.
+3. This prediction could alert of future higher enrgy consumption back to historical levels is measures not taken to maintain low usage.
+
+
+9.0 DECOMPOSITION VISUALIZATION AND ANALYSIS OF SEASONAL TIME SERIES 
+
+According to The Little Book of R: “A seasonal time series consists of a trend component, a seasonal component and an irregular component. Decomposing the time series means separating the time series into these three components: that is, estimating these three components.”
+When analysing the trend of a time series independently of the seasonal components, seasonal adjustment method is used to remove the seasonal component of a time series that exhibits a seasonal pattern. 
+
+In order to correctly estimate any trend and seasonal components that might be in the time series the decompose() function in the forecast package is used. This estimates the trend, seasonal, and irregular components of a time series.
+
+When the decompose() function is used, R returns three different objects (Seasonal component, Trend component, Random component) that can be accessed from the command line after running decompose() on the time series. 
+
+9.1 Decomposition Visualization Sub-meter 3
+9.1.1 Does Sub-meter 3 show a trend in power usage?
+9.1.2 This information will be important to a homeowner trying to understand their power consumption.
+9.1.3 Does Sub-meter 3 show seasonal effects on power usage towards end of every year.
+What may or may not cause this? 
+```{r}
+## Decompose Sub-meter 3 into Trend, Seasonal and Remainder
+components070809SM3weekly <- decompose(tsSM3_070809weekly)
+```
+
+```{r}
+## Check summary statistics for decomposed Sub-meter 3 
+summary(components070809SM3weekly)
+```
+
+```{r}
+components070809SM3weekly$seasonal
+```
+
+```{r}
+## Plot decomposed Sub-meter 3 
+plot(components070809SM3weekly)
+```
+
+Decomposition Insights:
+The plot above shows the original time series (observed), the estimated trend component (trend), the estimated seasonal component (seasonal), and the estimated irregular component (random). 
+1. We can see that the estimated trend component shows a huge decrease from about 2.5 in mid 2008 to about 2.5 in around 3rd quarter of 2008, followed by a zig zag and slow increase from then on to about mid of 2009.
+2. As seen in the graph above, there's a clear trend in energy usage in Sub-meter 3.
+Power usage steadily decreases from its high in mid 2007 to the lowest consumption in mid of 2008.
+3. This information will be important to a homeowner trying to understand their power consumption. 
+4. The estimated seasonal factors are given for the period 2007 to 2010, and are the same for each year. The largest seasonal factor is (about 15.59), and the lowest is (about -4.54), indicating that there seems to be a peak and a trough in power consumption during this period.
+5. The drop in energy consumption may be caused change in the homeowner energy usage behavior or activities in Sub-meter 3 area.
+
+Further Visualizations and analysis:
+
+9.2 Sub-meter 1 Decomposed plot With Same Frequency and Time Period
+```{r}
+## Decompose Sub-meter 1 into Trend, Seasonal and Remainder
+components070809SM1weekly <- decompose(tsSM1_070809weekly)
+```
+
+```{r}
+## Plot decomposed Sub-meter 1 
+plot(components070809SM1weekly)
+```
+
+```{r}
+## Check summary statistics for decomposed Sub-meter 1
+summary(components070809SM1weekly)
+```
+1. As shown in the graph above, Sub-meter 1 also show a trend in energy usage.
+Power usage increases from early 2008 to end of 2009.Interestingly, power usage holds constantly high for the first half of 2009.Not surprisingly, Sub-meter 1 does not show seasonal effects on power usage because kitchen activities my not be affected by seasonal factors like weather.
+2. Unlike Sub-meter 3 area, energy consumption in the kitchen area seems to increase from the lowest point in late 2007 to its peak in early 2009.
+3. Number of home occupants may have increased hence more usage of the kitchen appliances for cooking.
+
+9.3 Sub-meter 2 Decomposed Plot With Same Frequency and Time Period
+```{r}
+## Decompose Sub-meter 2 into Trend, Seasonal and Remainder
+components070809SM2weekly <- decompose(tsSM2_070809weekly)
+```
+
+```{r}
+## Plot decomposed Sub-meter 2 
+plot(components070809SM2weekly)
+```
+
+```{r}
+## Check summary statistics for decomposed Sub-meter 2 
+summary(components070809SM2weekly)
+```
+1. Sub-meter 2 shows unclear trend in energy usage.
+Power usage seem to peak at end of 2007 but drastically decreased and reamin flat-low most part of 2008.
+2. Energy usage drastically increased at beginning of 2009. 
+3. This could be caused by any factor like removal of energy-saving appliance from the laundry area.
+Sub-meter 2 shows seasonal effects on power usage during middle 0f each year. 
+
+10. HOLT-WINTERS FORCASTING
+
+HoltWinters() function from the stats package helps to make forecasts.
+We can fit a simple exponential smoothing predictive model using HoltWinters() in R. 
+
+Remove Seasonal Components
+To use HoltWinters() for forecasting, seasonal component that was identified via decomposition must first need to be removed by using Seasonal adjusting.
+
+10.1 Seasonal Adjusting Sub-meter 3
+```{r}
+## Seasonal adjusting sub-meter 3 by subtracting the seasonal component & plot
+tsSM3_070809Adjusted <- tsSM3_070809weekly - components070809SM3weekly$seasonal
+```
+
+```{r}
+autoplot(tsSM3_070809Adjusted)
+```
+
+To confirm removal of seasonal component, let's try decompose again.
+Although, there is a seasonal line, however we verify removal of seasonlity by looking at the scale for the seasonal section. -1.0e-15 through 1.0e-12.5 indictate a decimal with very very small number.
+For all practical purposes the seasonality removal is confirmed. 
+```{r}
+## Test Seasonal Adjustment by running Decompose again. Note the very, very small scale for Seasonal
+plot(decompose(tsSM3_070809Adjusted))
+```
+
+HoltWinters Simple Exponential Smoothing
+After removal of the the seasonal component, we can now use HoltWinters Simple Exponential Smoothing function. 
+```{r}
+## Holt Winters Exponential Smoothing & Plot
+tsSM3_HW070809 <- HoltWinters(tsSM3_070809Adjusted, beta=FALSE, gamma=FALSE)
+plot(tsSM3_HW070809, ylim = c(0, 25))
+```
+In the plot above the exponentially smooth fitted line is plotted in red along with the original data points. To understand how does exponential smoothing help, consider the outliers. Consider the information removed when subsetted millions of data points to just 52 observations per year.
+
+The plot above shows the original time series in black, and the forecasts as a red line. The time series of forecasts is much smoother than the time series of the original data here.
+
+As a measure of the accuracy of the forecasts, we can calculate the sum of squared errors for the in-sample forecast errors, that is, the forecast errors for the time period covered by our original time series. The sum-of-squared-errors is stored in a named element of the list variable “tsSM3_HW070809”.
+
+
+```{r}
+## Forcast again after created a ts object that contains exponentially smoothed data with no seasonality,
+## HoltWinters forecast & plot
+tsSM3_HW070809for <- forecast(tsSM3_HW070809, h=25)
+plot(tsSM3_HW070809for, ylim = c(0, 20), ylab= "Watt-Hours", xlab="Time - Sub-meter 3")
+```
+
+Fine tuning by changing the confidence levels and then plot only the forecasted area. 
+Think of this just as when a weatherperson forecasts the weather: The preceding years, weeks and days are not usually included in the forcast. 
+```{r}
+## Forecast HoltWinters with diminished confidence levels
+tsSM3_HW070809forC <- forecast(tsSM3_HW070809, h=25, level=c(10,25))
+```
+
+```{r}
+## Plot only the forecasted area
+plot(tsSM3_HW070809forC, ylim = c(0, 20), ylab= "Watt-Hours", xlab="Time - Sub-meter 3", start(2010))
+```
+The resulting plot above shows a very consistent forecast for sub-meter 3
+
+Further HoltWinters Visualizations with Sub-meters 1 and 2
+
+10.2 Sub-meter 1 forecast plot and a plot containing only the forecasted area.
+Same frequency and time period.
+```{r}
+## Seasonal adjusting sub-meter 1 by subtracting the seasonal component & plot
+tsSM1_070809Adjusted <- tsSM1_070809weekly - components070809SM1weekly$seasonal
+```
+
+```{r}
+autoplot(tsSM1_070809Adjusted)
+```
+
+To confirm removal of seasonal component. 
+```{r}
+## Test Seasonal Adjustment by running Decompose again. Note the very, very small scale for Seasonal
+plot(decompose(tsSM1_070809Adjusted))
+```
+
+HoltWinters Simple Exponential Smoothing
+After removal of the the seasonal component  
+```{r}
+## Holt Winters Exponential Smoothing & Plot Sub-meter 1
+tsSM1_HW070809 <- HoltWinters(tsSM1_070809Adjusted, beta=FALSE, gamma=FALSE)
+plot(tsSM1_HW070809, ylim = c(0, 25))
+```
+
+```{r}
+## Forcast again after created a ts object that contains exponentially smoothed data with no seasonality,
+## HoltWinters forecast & plot
+tsSM1_HW070809for <- forecast(tsSM1_HW070809, h=25)
+plot(tsSM1_HW070809for, ylim = c(0, 20), ylab= "Watt-Hours", xlab="Time - Sub-meter 1")
+```
+
+```{r}
+## Forecast HoltWinters with diminished confidence levels
+tsSM1_HW070809forC <- forecast(tsSM1_HW070809, h=25, level=c(10,25))
+```
+
+The resulting image shows a very consistent forecast for sub-meter 3
+```{r}
+## Plot only the forecasted area for Sub-meter 1
+plot(tsSM1_HW070809forC, ylim = c(0, 20), ylab= "Watt-Hours", xlab="Time - Sub-meter 1", start(2010))
+```
+
+
+10.3 Sub-meter 2 forecast plot and a plot containing only the forecasted area. Your choice of frequency and time period.
+```{r}
+## Seasonal adjusting sub-meter 3 by subtracting the seasonal component & plot
+tsSM2_070809Adjusted <- tsSM2_070809weekly - components070809SM2weekly$seasonal
+```
+
+```{r}
+autoplot(tsSM2_070809Adjusted)
+```
+
+```{r}
+## Test Seasonal Adjustment by running Decompose again. Note the very, very small scale for Seasonal
+plot(decompose(tsSM2_070809Adjusted))
+```
+
+HoltWinters Simple Exponential Smoothing
+After removal of the the seasonal component let's use HoltWinters simple exponential smoothing function. 
+```{r}
+## Holt Winters Exponential Smoothing & Plot
+tsSM2_HW070809 <- HoltWinters(tsSM2_070809Adjusted, beta=FALSE, gamma=FALSE)
+plot(tsSM2_HW070809, ylim = c(0, 25))
+```
+
+```{r}
+## Forcast again after created a ts object that contains exponentially smoothed data with no seasonality,
+## HoltWinters forecast & plot
+tsSM2_HW070809for <- forecast(tsSM2_HW070809, h=25)
+plot(tsSM2_HW070809for, ylim = c(0, 20), ylab= "Watt-Hours", xlab="Time - Sub-meter 2")
+```
+
+Lastly, let's change the the confidence levels and then plot only the forecasted area. 
+```{r}
+## Forecast HoltWinters with diminished confidence levels
+tsSM2_HW070809forC <- forecast(tsSM2_HW070809, h=25, level=c(10,25))
+```
+
+The resulting image shows a very consistent forecast for sub-meter 3
+```{r}
+## Plot only the forecasted area
+plot(tsSM2_HW070809forC, ylim = c(0, 20), ylab= "Watt-Hours", xlab="Time - Sub-meter 2", start(2010))
+```
+
