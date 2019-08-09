@@ -1,0 +1,425 @@
+---
+title: "Sub_metering Analytics Project"
+author: "Itoro_E"
+date: "7/2/2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This project centers around visualizations and time series analysis of sub-meters.
+
+```{r}
+# Load packages
+#install.packages("RMySQL")
+#install.packages("magrittr")
+library(magrittr)
+```
+```{r}
+# library(RMySQL)
+# library(DBI)
+library(pacman)
+library(Hmisc)      #for descriptive statistics
+library(tidyverse)  #Package for tidying data
+library(lubridate)  #For working with dates/times of a time series
+library(VIM)        #Visualizing and imputing missing values
+library(broom)      #Tidy statistical summary output
+library(knitr)      #report generation
+library(kableExtra) #fancy table generator
+library(psych)
+library(lattice)
+library(survival)
+library(Formula)
+```
+
+Create a database connection
+```{r}
+ con = dbConnect(MySQL(), user='deepAnalytics', password='Sqltask1234!',
+                 dbname='dataanalytics2018', host='data-analytics-2018.cbrosir2cswx.us-east-1.rds.amazonaws.com')
+```
+
+Use RMySQL to connect to the database and see what it contains.
+List the tables contained in the database
+```{r}
+dbListTables(con)
+```
+
+Use the dbGetQuery function to download tables 2006 through 2010 with the specified attributes
+```{r}
+# yr_2006ALL <- dbGetQuery(con, "SELECT * FROM yr_2006")
+# yr_2007ALL <- dbGetQuery(con, "SELECT * FROM yr_2007")
+# yr_2008ALL <- dbGetQuery(con, "SELECT * FROM yr_2008")
+# yr_2009ALL <- dbGetQuery(con, "SELECT * FROM yr_2009")
+# yr_2010ALL <- dbGetQuery(con, "SELECT * FROM yr_2010")
+```
+
+create a Multi-Year data frame to serve as the primary data frame for the project.
+using dplyr package function “bind_rows
+Combine tables or df (ONLY includes the df that span an entire year: 2007, 2008, 2009)
+```{r}
+# newDF <- dplyr::bind_rows(yr_2007ALL, yr_2008ALL, yr_2009ALL)
+```
+
+Gather summary statistics
+mean, mode, standard deviation, quartiles & characterization of the distribution
+```{r}
+# rm(M1_2007_month)
+```
+
+```{r}
+# Summary statistics for newDF data features
+# summary(newDF)
+```
+
+data munging newDF to create a 'DateTime' attribute Combining the 'Date' and 'Time' col within df
+```{r}
+# Combining the Date and Time columns with 'cbind' function in dplyr 
+# newDF1 <-cbind(newDF,paste(newDF$Date,newDF$Time), stringsAsFactors=FALSE)
+```
+
+Header name for new attribute in the 11th column
+```{r}
+# colnames(newDF1)[11] <-"DateTime"
+```
+
+Move the DateTime attribute within the dataset to make it first column
+```{r}
+# newDF2 <- newDF1[,c(ncol(newDF1), 1:(ncol(newDF1)-1))]
+```
+
+Using "SELECT" function to DROP old "Date" and "Time" columns from newDF2
+```{r}
+newDF3 <- dplyr::select(newDF2, -c(Date,Time, id))
+```
+
+```{r}
+# Confirm class of new DateTime feature is converted
+# class(newDF3$DateTime)
+```
+
+Convert data type of new DateTime feature
+```{r}
+#newDF3$DateTime <- as.POSIXct(newDF3$DateTime, "%Y/%m/%d %H:%M:%S")
+```
+
+```{r}
+newDF3$DateTime <- as.POSIXct(newDF3$DateTime, format = "%Y%m%d %H:%M:%S")
+
+```
+
+```{r}
+attr(newDF3$DateTime, "tzone") <- "America/Chicago"
+```
+
+Using Libridate to create attributes for quarter, month, week, weekday,# day, hour and minute
+```{r}
+newDF3$year <- year(newDF3$DateTime)
+newDF3$quarter <- quarter(newDF3$DateTime)
+newDF3$month <- month(newDF3$DateTime)
+newDF3$week <- week(newDF3$DateTime)
+newDF3$day <- day(newDF3$DateTime)
+newDF3$hour <- hour(newDF3$DateTime)
+newDF3$minute <- minute(newDF3$DateTime)
+```
+
+Granularity - Subsetting and Meaningful Time Periods
+```{r}
+## Subset the second week of 2008 - All Observations
+Week_2008 <- filter(newDF3, year == 2008 & week == 2)
+
+```
+
+```{r}
+## Plot subset houseWeek of 2008
+plot(Week_2008$Sub_metering_1)
+```
+
+```{r}
+# mean(is.na(newDF3))
+```
+
+```{r}
+# Subset the 9th day of January 2008 - All observations
+House_9thDay <- filter(newDF3, year == 2008 & month == 1 & day == 9)
+```
+
+```{r}
+# Plot sub-meter 1
+plot_ly(House_9thDay, x = ~House_9thDay$DateTime, y = ~House_9thDay$Sub_metering_1, type = 'scatter', mode = 'lines')
+```
+
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - All observations 
+plot_ly(House_9thDay, x = ~House_9thDay$DateTime, y = ~House_9thDay$Sub_metering_1, name = 'Kitchen',
+        type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~House_9thDay$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~House_9thDay$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption January 9th, 2008",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+
+```
+
+```{r}
+## Subset the 9th day of January 2008 - 10 Minute frequency
+House_10min <- filter(newDF3, year == 2008 & month == 1 & day == 9 & (minute == 0 | minute == 10 | minute == 20 | minute == 30 | minute == 40 | minute == 50))
+```
+
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - 10 Minute frequency
+plot_ly(House_10min, x = ~House_10min$DateTime, y = ~House_10min$Sub_metering_1, name = 'Kitchen', type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~House_10min$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~House_10min$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption January 9th, 2008",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+
+```
+
+With the granularity adjusted we get a much more clear picture of the power consumption on January 9th.
+So what can you learn from this visualization? Your analysis could include answers to the following.
+
+What peaks might represent the water heater?
+Water might be used between 6:30 AM and 8:30 AM for bath. And about 7:30 AM and 2:30 PM
+Water heater is also peaked during laundry
+
+How about the AC? 
+The spike in energy usage may not be realated to AC usage, since this the month of January/winter in Paris
+
+What could be happening in the laundry room? 
+Energy usage seems to peak every 2 to 2 1/2 hours from 2 AM to 10 PM
+There seems to be a energy regulator device or appliance in the laundry area
+
+How many times during this day are kitchen appliances being used? 
+The homeowner uses more kitchen appliances between 5 PM and 6:30 PM
+
+Does the data from these three sub-meters contain useful information for the homeowner? 
+The information in these data is limited. cannot make decision based on it.
+
+```{r}
+## Subset the 9th day of January 2008 - 30min frequency
+House_30min <- filter(newDF3, year == 2008 & month == 1 & day == 9 & (minute == 0 | minute == 30 | minute == 60))
+```
+
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - 30min frequency
+plot_ly(House_30min, x = ~House_30min$DateTime, y = ~House_30min$Sub_metering_1, name = 'Kitchen', type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~House_30min$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~House_30min$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption January 9th, 2008",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+
+```
+
+```{r}
+## Subset the 9th day of January 2009 - 10min frequency to See if Different from same day 2008
+House_10min09 <- filter(newDF3, year == 2009 & month == 1 & day == 9 & (minute == 0 | minute == 10 | minute == 20 | minute == 30 | minute == 40 | minute == 50))
+```
+
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - 10min frequency for 2009
+plot_ly(House_10min09, x = ~House_10min09$DateTime, y = ~House_10min09$Sub_metering_1, name = 'Kitchen', type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~House_10min09$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~House_10min09$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption January 9th, 2009",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+
+```
+
+2.1 Creating visualization with plotly for a random "Week" and "Day". Using all three sub-meters. Experiment with granularity. 
+```{r}
+## Subset the 28 week of 2009 - All Observations
+Week_2009 <- filter(newDF3, year == 2009 & week == 28)
+```
+
+```{r}
+# Subset the 5th day of July 2009 - All observations
+House_July5 <- filter(newDF3, year == 2009 & month == 7 & day == 5)
+```
+
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - All observations 
+plot_ly(House_July5, x = ~House_July5$DateTime, y = ~House_July5$Sub_metering_1, name = 'Kitchen',
+        type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~House_July5$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~House_July5$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption July 9th, 2009",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+```
+
+Looking with the Granularity adjustment for clearer picture
+```{r}
+## Subset the 9th day of July 2009 - 10min frequency
+House_10min_July <- filter(newDF3, year == 2009 & month == 7 & day == 5 & (minute == 0 | minute == 10 | minute == 20 | minute == 30 | minute == 40 | minute == 50))
+```
+
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - 10min frequency for 2009
+plot_ly(House_10min_July, x = ~House_10min_July$DateTime, y = ~House_10min_July$Sub_metering_1, name = 'Kitchen', type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~House_10min_July$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~House_10min_July$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption July 5th, 2009",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+```
+
+
+3. Visualization for a time period. Both "Day" and "Week" highlighting typical patterns in a home. Another period of time that could provide insights using plotly. Experimenting with granularity until a visualization that maximizes information gain. 
+
+```{r}
+## Subset the week 45 of 2007 - All Observations
+Week_2007 <- filter(newDF3, year == 2007 & week == 45)
+```
+
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - All observations for Week 45 Year 2007
+plot_ly(Week_2007, x = ~Week_2007$DateTime, y = ~Week_2007$Sub_metering_1, name = 'Kitchen',
+        type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~Week_2007$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~Week_2007$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption January 9th, 2008",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+
+```
+
+```{r}
+# Subset the 5th day of November 2007 - All observations
+House_Nov5 <- filter(newDF3, year == 2007 & month == 11 & day == 5)
+```
+
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - All observations 
+plot_ly(House_9thDay, x = ~House_9thDay$DateTime, y = ~House_9thDay$Sub_metering_1, name = 'Kitchen',
+        type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~House_9thDay$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~House_9thDay$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption January 9th, 2008",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+
+```
+
+With Granularity adjustment
+```{r}
+## Subset the 9th day of July 2009 - 10min frequency
+House_10min_July <- filter(newDF3, year == 2009 & month == 7 & day == 5 & (minute == 0 | minute == 10 | minute == 20 | minute == 30 | minute == 40 | minute == 50))
+```
+
+
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - All observations 
+plot_ly(House_9thDay, x = ~House_9thDay$DateTime, y = ~House_9thDay$Sub_metering_1, name = 'Kitchen',
+        type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~House_9thDay$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~House_9thDay$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption January 9th, 2008",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+
+```
+
+
+
+
+
+
+
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - All observations 
+plot_ly(House_July5, x = ~House_July5$DateTime, y = ~House_July5$Sub_metering_1, name = 'Kitchen',
+        type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~House_July5$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~House_July5$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption July 9th, 2009",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+```
+
+Looking with the Granularity adjustment for clearer picture
+```{r}
+## Subset the 9th day of July 2009 - 10min frequency
+House_10min_July <- filter(newDF3, year == 2009 & month == 7 & day == 5 & (minute == 0 | minute == 10 | minute == 20 | minute == 30 | minute == 40 | minute == 50))
+```
+
+```{r}
+## Plot sub-meter 1, 2 and 3 with title, legend and labels - 10min frequency for 2009
+plot_ly(House_10min_July, x = ~House_10min_July$DateTime, y = ~House_10min_July$Sub_metering_1, name = 'Kitchen', type = 'scatter', mode = 'lines') %>%
+ add_trace(y = ~House_10min_July$Sub_metering_2, name = 'Laundry Room', mode = 'lines') %>%
+ add_trace(y = ~House_10min_July$Sub_metering_3, name = 'Water Heater & AC', mode = 'lines') %>%
+ layout(title = "Power Consumption July 5th, 2009",
+ xaxis = list(title = "Time"),
+ yaxis = list (title = "Power (watt-hours)"))
+```
+```{r}
+#rm(House_July9)
+```
+
+To aid with visualization of the three sub-meters data on the same chart
+new column ‘Sub_Meter’ which contains all three sub-meters is created.
+Another column ‘Watt_hr’ is created to store observed values for the sub-meters 
+```{r}
+# newDF_Data <- newDF3 %>%
+#   gather(Meter, Watt_hr, 'Sub_metering_1', 'Sub_metering_2', 'Sub_metering_3')
+```
+
+Converting 'Meter' feature to categorical factor
+```{r}
+#newDF_Data$Meter <- factor(newDF_Data$Meter)
+```
+
+Use glimpse() to check on the Meter conversion before exploratory data analysis
+```{r}
+#glimpse(newDF_Data)
+```
+
+Data Exploration and Visualizations of Energy Usage Across a time periods in Sub-Meters
+```{r}
+#-Year_Proportional Plot
+# newDF_Data %>%
+#   group_by(year(DateTime), Meter) %>%
+#   summarise(sum=sum(Watt_hr)) %>%
+#   ggplot(aes(x=factor(`year(DateTime)`), sum, group=Meter,fill=Meter)) +
+#   labs(x='Year', y='Proportion of Usage') +
+#   ggtitle('Proportion of Sum of Yearly Energy Consumption') +
+#   geom_bar(stat='identity', position='fill', color='green') +
+#   theme(panel.border=element_rect(colour='green', fill=NA)) +
+#   theme(text = element_text(size = 14))
+```
+
+```{r}
+# by_Quarterly bar plot
+# newDF_Data %>%
+#   filter(year(DateTime)<2010) %>%
+#   group_by(quarter(DateTime), Meter) %>%
+#   summarise(sum=round(sum(Watt_hr/1000),3)) %>%
+#   ggplot(aes(x=factor(`quarter(DateTime)`), y=sum)) +
+#   labs(x='Quarter of the Year', y='kWh') +
+#   ggtitle('Sum of Quarterly Energy Consumption') +
+#   geom_bar(stat='identity', aes(fill = Meter), color='green') +
+#   theme(panel.border=element_rect(colour='green', fill=NA)) +
+#   theme(text = element_text(size = 14))
+```
+
+```{r}
+# by_Month bar chart
+# newDF_Data %>%
+#   filter(year(DateTime)<2010) %>%
+#   mutate(Month=lubridate::month(DateTime, label=TRUE, abbr=TRUE)) %>%
+#   group_by(Month, Meter) %>%
+#   summarise(sum=round(sum(Watt_hr)/1000),3) %>%
+#   ggplot(aes(x=factor(Month), y=sum)) +
+#     labs(x='Month of the Year', y='kWh') +
+#     ggtitle('Monthly Sum of Energy Usage in the Year') +
+#     geom_bar(stat='identity', aes(fill = Meter), colour='green') +
+#   theme(panel.border=element_rect(colour='green', fill=NA)) +
+#   theme(text = element_text(size = 14))
+```
+

@@ -1,0 +1,739 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={Sub\_metering Analytics Project},
+            pdfauthor={Itoro\_E},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\providecommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+
+  \title{Sub\_metering Analytics Project}
+    \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+    \author{Itoro\_E}
+    \preauthor{\centering\large\emph}
+  \postauthor{\par}
+      \predate{\centering\large\emph}
+  \postdate{\par}
+    \date{7/2/2019}
+
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+
+\begin{document}
+\maketitle
+
+This project centers around visualizations and time series analysis of
+sub-meters.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Load packages}
+\CommentTok{#install.packages("RMySQL")}
+\CommentTok{#install.packages("magrittr")}
+\KeywordTok{library}\NormalTok{(magrittr)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(RMySQL)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Loading required package: DBI
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(DBI)}
+\CommentTok{#library(pacman)}
+\KeywordTok{library}\NormalTok{(Hmisc)      }\CommentTok{#for descriptive statistics}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Loading required package: lattice
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: survival
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: Formula
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: ggplot2
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'Hmisc'
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:base':
+## 
+##     format.pval, units
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(tidyverse)  }\CommentTok{#Package for tidying data}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## -- Attaching packages ---------------------------------------------------------------------- tidyverse 1.2.1 --
+\end{verbatim}
+
+\begin{verbatim}
+## v tibble  2.1.3     v purrr   0.3.2
+## v tidyr   0.8.3     v dplyr   0.8.1
+## v readr   1.3.1     v stringr 1.4.0
+## v tibble  2.1.3     v forcats 0.4.0
+\end{verbatim}
+
+\begin{verbatim}
+## -- Conflicts ------------------------------------------------------------------------- tidyverse_conflicts() --
+## x tidyr::extract()   masks magrittr::extract()
+## x dplyr::filter()    masks stats::filter()
+## x dplyr::lag()       masks stats::lag()
+## x purrr::set_names() masks magrittr::set_names()
+## x dplyr::src()       masks Hmisc::src()
+## x dplyr::summarize() masks Hmisc::summarize()
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(lubridate)  }\CommentTok{#For working with dates/times of a time series}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Attaching package: 'lubridate'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:base':
+## 
+##     date
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(VIM)        }\CommentTok{#Visualizing and imputing missing values}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Loading required package: colorspace
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: grid
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: data.table
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'data.table'
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:lubridate':
+## 
+##     hour, isoweek, mday, minute, month, quarter, second, wday,
+##     week, yday, year
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:dplyr':
+## 
+##     between, first, last
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:purrr':
+## 
+##     transpose
+\end{verbatim}
+
+\begin{verbatim}
+## VIM is ready to use. 
+##  Since version 4.0.0 the GUI is in its own package VIMGUI.
+## 
+##           Please use the package to use the new (and old) GUI.
+\end{verbatim}
+
+\begin{verbatim}
+## Suggestions and bug-reports can be submitted at: https://github.com/alexkowa/VIM/issues
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'VIM'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:datasets':
+## 
+##     sleep
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(broom)      }\CommentTok{#Tidy statistical summary output}
+\KeywordTok{library}\NormalTok{(knitr)      }\CommentTok{#report generation}
+\KeywordTok{library}\NormalTok{(kableExtra) }\CommentTok{#fancy table generator}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Attaching package: 'kableExtra'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:dplyr':
+## 
+##     group_rows
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(psych)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Attaching package: 'psych'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:Hmisc':
+## 
+##     describe
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:ggplot2':
+## 
+##     %+%, alpha
+\end{verbatim}
+
+Create a database connection
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ con =}\StringTok{ }\KeywordTok{dbConnect}\NormalTok{(}\KeywordTok{MySQL}\NormalTok{(), }\DataTypeTok{user=}\StringTok{'deepAnalytics'}\NormalTok{, }\DataTypeTok{password=}\StringTok{'Sqltask1234!'}\NormalTok{, }
+                 \DataTypeTok{dbname=}\StringTok{'dataanalytics2018'}\NormalTok{, }\DataTypeTok{host=}\StringTok{'data-analytics-2018.cbrosir2cswx.us-east-1.rds.amazonaws.com'}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Use RMySQL to connect to the database and see what it contains. List the
+tables contained in the database
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{dbListTables}\NormalTok{(con)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "iris"    "yr_2006" "yr_2007" "yr_2008" "yr_2009" "yr_2010"
+\end{verbatim}
+
+Lists attributes contained in a table
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{dbListFields}\NormalTok{(con,}\StringTok{'iris'}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "id"            "SepalLengthCm" "SepalWidthCm"  "PetalLengthCm"
+## [5] "PetalWidthCm"  "Species"
+\end{verbatim}
+
+Use asterisk to specify all attributes for download
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{irisALL <-}\StringTok{ }\KeywordTok{dbGetQuery}\NormalTok{(con, }\StringTok{"SELECT * FROM iris"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning in .local(conn, statement, ...): Unsigned INTEGER in col 0 imported
+## as numeric
+\end{verbatim}
+
+Use attribute names to specify specific attributes for download
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{irisSELECT <-}\StringTok{ }\KeywordTok{dbGetQuery}\NormalTok{(con, }\StringTok{"SELECT SepalLengthCm, SepalWidthCm FROM iris"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Using the dbListFields function to learn the attributes associated with
+the yr\_2006 table.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#dbListFields(con, 'yr_2006')}
+\end{Highlighting}
+\end{Shaded}
+
+Use the dbGetQuery function to download tables 2006 through 2010 with
+the specified attributes
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{yr_2006ALL <-}\StringTok{ }\KeywordTok{dbGetQuery}\NormalTok{(con, }\StringTok{"SELECT * FROM yr_2006"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning in .local(conn, statement, ...): Unsigned INTEGER in col 0 imported
+## as numeric
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{yr_2007ALL <-}\StringTok{ }\KeywordTok{dbGetQuery}\NormalTok{(con, }\StringTok{"SELECT * FROM yr_2007"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning in .local(conn, statement, ...): Unsigned INTEGER in col 0 imported
+## as numeric
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{yr_2008ALL <-}\StringTok{ }\KeywordTok{dbGetQuery}\NormalTok{(con, }\StringTok{"SELECT * FROM yr_2008"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning in .local(conn, statement, ...): Unsigned INTEGER in col 0 imported
+## as numeric
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{yr_2009ALL <-}\StringTok{ }\KeywordTok{dbGetQuery}\NormalTok{(con, }\StringTok{"SELECT * FROM yr_2009"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning in .local(conn, statement, ...): Unsigned INTEGER in col 0 imported
+## as numeric
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{yr_2010ALL <-}\StringTok{ }\KeywordTok{dbGetQuery}\NormalTok{(con, }\StringTok{"SELECT * FROM yr_2010"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning in .local(conn, statement, ...): Unsigned INTEGER in col 0 imported
+## as numeric
+\end{verbatim}
+
+create a Multi-Year data frame to serve as the primary data frame for
+the project. using dplyr package function ``bind\_rows Combine tables or
+df (ONLY includes the df that span an entire year: 2007, 2008, 2009)
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{newDF <-}\StringTok{ }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{bind_rows}\NormalTok{(yr_2007ALL, yr_2008ALL, yr_2009ALL)}
+\end{Highlighting}
+\end{Shaded}
+
+Gather summary statistics mean, mode, standard deviation, quartiles \&
+characterization of the distribution
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# describe(newDF)}
+\CommentTok{# head(newDF)}
+\CommentTok{# tail(newDF)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Summary statistics for newDF data features}
+\CommentTok{# summary(newDF)}
+\end{Highlighting}
+\end{Shaded}
+
+data munging newDF to create a `DateTime' attribute Combining the `Date'
+and `Time' col within df
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Combining the Date and Time columns with 'cbind' function in dplyr }
+\NormalTok{newDF1 <-}\KeywordTok{cbind}\NormalTok{(newDF,}\KeywordTok{paste}\NormalTok{(newDF}\OperatorTok{$}\NormalTok{Date,newDF}\OperatorTok{$}\NormalTok{Time), }\DataTypeTok{stringsAsFactors=}\OtherTok{FALSE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Header name for new attribute in the 11th column
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{colnames}\NormalTok{(newDF1)[}\DecValTok{11}\NormalTok{] <-}\StringTok{"DateTime"}
+\end{Highlighting}
+\end{Shaded}
+
+Move the DateTime attribute within the dataset to make it first column
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{newDF2 <-}\StringTok{ }\NormalTok{newDF1[,}\KeywordTok{c}\NormalTok{(}\KeywordTok{ncol}\NormalTok{(newDF1), }\DecValTok{1}\OperatorTok{:}\NormalTok{(}\KeywordTok{ncol}\NormalTok{(newDF1)}\OperatorTok{-}\DecValTok{1}\NormalTok{))]}
+\end{Highlighting}
+\end{Shaded}
+
+Using ``SELECT'' function to DROP old ``Date'' and ``Time'' columns from
+newDF2
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{newDF3 <-}\StringTok{ }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{select}\NormalTok{(newDF2, }\OperatorTok{-}\KeywordTok{c}\NormalTok{(Date,Time, id))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Confirm class of new DateTime feature is converted}
+\CommentTok{# class(newDF3$DateTime)}
+\end{Highlighting}
+\end{Shaded}
+
+Convert data type of new DateTime feature
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{newDF3}\OperatorTok{$}\NormalTok{DateTime <-}\StringTok{ }\KeywordTok{as.POSIXct}\NormalTok{(newDF3}\OperatorTok{$}\NormalTok{DateTime, }\StringTok{"%Y/%m/%d %H:%M:%S"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning in strptime(xx, f, tz = tz): unknown timezone '%Y/%m/%d %H:%M:%S'
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in as.POSIXct.POSIXlt(x): unknown timezone '%Y/%m/%d %H:%M:%S'
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in strptime(x, f, tz = tz): unknown timezone '%Y/%m/%d %H:%M:%S'
+\end{verbatim}
+
+\begin{verbatim}
+## Warning in as.POSIXct.POSIXlt(as.POSIXlt(x, tz, ...), tz, ...): unknown
+## timezone '%Y/%m/%d %H:%M:%S'
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{attr}\NormalTok{(newDF3}\OperatorTok{$}\NormalTok{DateTime, }\StringTok{"tzone"}\NormalTok{) <-}\StringTok{ "Europe/Paris"}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#str(newDF3)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Using range() function to understand the timeframe that’s covered by newDF2}
+\CommentTok{# range(newDF3$DateTime)}
+\end{Highlighting}
+\end{Shaded}
+
+Visualize and Look for any missing data in new df after 2006 and 2010
+removed
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{aggr}\NormalTok{(newDF3, }\DataTypeTok{col=}\KeywordTok{c}\NormalTok{(}\StringTok{'navyblue'}\NormalTok{,}\StringTok{'red'}\NormalTok{),}
+                  \DataTypeTok{numbers=}\OtherTok{TRUE}\NormalTok{, }
+                  \DataTypeTok{sortVars=}\OtherTok{TRUE}\NormalTok{, }
+                  \DataTypeTok{labels=}\KeywordTok{names}\NormalTok{(newDF3),}
+                  \DataTypeTok{cex.axis=}\NormalTok{.}\DecValTok{7}\NormalTok{, }
+                  \DataTypeTok{gap=}\DecValTok{3}\NormalTok{, }
+                  \DataTypeTok{ylab=}\KeywordTok{c}\NormalTok{(}\StringTok{"Histogram of missing data"}\NormalTok{,}\StringTok{"Pattern"}\NormalTok{), }
+                  \DataTypeTok{digits=}\DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Sub_metering_Project_files/figure-latex/unnamed-chunk-22-1.pdf}
+
+\begin{verbatim}
+## 
+##  Variables sorted by number of missings: 
+##               Variable Count
+##               DateTime     0
+##    Global_active_power     0
+##  Global_reactive_power     0
+##       Global_intensity     0
+##                Voltage     0
+##         Sub_metering_1     0
+##         Sub_metering_2     0
+##         Sub_metering_3     0
+\end{verbatim}
+
+Using Libridate to create attributes for quarter, month, week,
+weekday,\# day, hour and minute
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{newDF3}\OperatorTok{$}\NormalTok{year <-}\StringTok{ }\KeywordTok{year}\NormalTok{(newDF3}\OperatorTok{$}\NormalTok{DateTime)}
+\NormalTok{newDF3}\OperatorTok{$}\NormalTok{quarter <-}\StringTok{ }\KeywordTok{quarter}\NormalTok{(newDF3}\OperatorTok{$}\NormalTok{DateTime)}
+\NormalTok{newDF3}\OperatorTok{$}\NormalTok{month <-}\StringTok{ }\KeywordTok{month}\NormalTok{(newDF3}\OperatorTok{$}\NormalTok{DateTime)}
+\NormalTok{newDF3}\OperatorTok{$}\NormalTok{week <-}\StringTok{ }\KeywordTok{week}\NormalTok{(newDF3}\OperatorTok{$}\NormalTok{DateTime)}
+\NormalTok{newDF3}\OperatorTok{$}\NormalTok{day <-}\StringTok{ }\KeywordTok{day}\NormalTok{(newDF3}\OperatorTok{$}\NormalTok{DateTime)}
+\NormalTok{newDF3}\OperatorTok{$}\NormalTok{hour <-}\StringTok{ }\KeywordTok{hour}\NormalTok{(newDF3}\OperatorTok{$}\NormalTok{DateTime)}
+\NormalTok{newDF3}\OperatorTok{$}\NormalTok{minute <-}\StringTok{ }\KeywordTok{minute}\NormalTok{(newDF3}\OperatorTok{$}\NormalTok{DateTime)}
+\end{Highlighting}
+\end{Shaded}
+
+To aid with visualization of the three sub-meters data on the same chart
+new column `Sub\_Meter' which contains all three sub-meters is created.
+Another column `Watt\_hr' is created to store observed values for the
+sub-meters
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{newDF_Data <-}\StringTok{ }\NormalTok{newDF3 }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{gather}\NormalTok{(Meter, Watt_hr, }\StringTok{'Sub_metering_1'}\NormalTok{, }\StringTok{'Sub_metering_2'}\NormalTok{, }\StringTok{'Sub_metering_3'}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Converting `Meter' feature to categorical factor
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{newDF_Data}\OperatorTok{$}\NormalTok{Meter <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(newDF_Data}\OperatorTok{$}\NormalTok{Meter)}
+\end{Highlighting}
+\end{Shaded}
+
+Use glimpse() to check on the Meter conversion before exploratory data
+analysis
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#glimpse(newDF_Data)}
+\end{Highlighting}
+\end{Shaded}
+
+Data Exploration and Visualizations of Energy Usage Across a time
+periods in Sub-Meters
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#-Year_Proportional Plot}
+\NormalTok{newDF_Data }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(}\KeywordTok{year}\NormalTok{(DateTime), Meter) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{sum=}\KeywordTok{sum}\NormalTok{(Watt_hr)) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\KeywordTok{factor}\NormalTok{(}\StringTok{`}\DataTypeTok{year(DateTime)}\StringTok{`}\NormalTok{), sum, }\DataTypeTok{group=}\NormalTok{Meter,}\DataTypeTok{fill=}\NormalTok{Meter)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{x=}\StringTok{'Year'}\NormalTok{, }\DataTypeTok{y=}\StringTok{'Proportion of Usage'}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{'Proportion of Sum of Yearly Energy Consumption'}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_bar}\NormalTok{(}\DataTypeTok{stat=}\StringTok{'identity'}\NormalTok{, }\DataTypeTok{position=}\StringTok{'fill'}\NormalTok{, }\DataTypeTok{color=}\StringTok{'green'}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{panel.border=}\KeywordTok{element_rect}\NormalTok{(}\DataTypeTok{colour=}\StringTok{'green'}\NormalTok{, }\DataTypeTok{fill=}\OtherTok{NA}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{text =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{14}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Sub_metering_Project_files/figure-latex/unnamed-chunk-27-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# by_Quarterly bar plot}
+\NormalTok{newDF_Data }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(}\KeywordTok{year}\NormalTok{(DateTime)}\OperatorTok{<}\DecValTok{2010}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(}\KeywordTok{quarter}\NormalTok{(DateTime), Meter) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{sum=}\KeywordTok{round}\NormalTok{(}\KeywordTok{sum}\NormalTok{(Watt_hr}\OperatorTok{/}\DecValTok{1000}\NormalTok{),}\DecValTok{3}\NormalTok{)) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\KeywordTok{factor}\NormalTok{(}\StringTok{`}\DataTypeTok{quarter(DateTime)}\StringTok{`}\NormalTok{), }\DataTypeTok{y=}\NormalTok{sum)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{x=}\StringTok{'Quarter of the Year'}\NormalTok{, }\DataTypeTok{y=}\StringTok{'kWh'}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{'Sum of Quarterly Energy Consumption'}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_bar}\NormalTok{(}\DataTypeTok{stat=}\StringTok{'identity'}\NormalTok{, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{fill =}\NormalTok{ Meter), }\DataTypeTok{color=}\StringTok{'green'}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{panel.border=}\KeywordTok{element_rect}\NormalTok{(}\DataTypeTok{colour=}\StringTok{'green'}\NormalTok{, }\DataTypeTok{fill=}\OtherTok{NA}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{text =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{14}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Sub_metering_Project_files/figure-latex/unnamed-chunk-28-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# by_Month bar chart}
+\NormalTok{newDF_Data }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(}\KeywordTok{year}\NormalTok{(DateTime)}\OperatorTok{<}\DecValTok{2010}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{Month=}\NormalTok{lubridate}\OperatorTok{::}\KeywordTok{month}\NormalTok{(DateTime, }\DataTypeTok{label=}\OtherTok{TRUE}\NormalTok{, }\DataTypeTok{abbr=}\OtherTok{TRUE}\NormalTok{)) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(Month, Meter) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{sum=}\KeywordTok{round}\NormalTok{(}\KeywordTok{sum}\NormalTok{(Watt_hr)}\OperatorTok{/}\DecValTok{1000}\NormalTok{),}\DecValTok{3}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{ggplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\KeywordTok{factor}\NormalTok{(Month), }\DataTypeTok{y=}\NormalTok{sum)) }\OperatorTok{+}
+\StringTok{    }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{x=}\StringTok{'Month of the Year'}\NormalTok{, }\DataTypeTok{y=}\StringTok{'kWh'}\NormalTok{) }\OperatorTok{+}
+\StringTok{    }\KeywordTok{ggtitle}\NormalTok{(}\StringTok{'Monthly Sum of Energy Usage in the Year'}\NormalTok{) }\OperatorTok{+}
+\StringTok{    }\KeywordTok{geom_bar}\NormalTok{(}\DataTypeTok{stat=}\StringTok{'identity'}\NormalTok{, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{fill =}\NormalTok{ Meter), }\DataTypeTok{colour=}\StringTok{'green'}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{panel.border=}\KeywordTok{element_rect}\NormalTok{(}\DataTypeTok{colour=}\StringTok{'green'}\NormalTok{, }\DataTypeTok{fill=}\OtherTok{NA}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{text =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{14}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Sub_metering_Project_files/figure-latex/unnamed-chunk-29-1.pdf}
+
+Sampling the data by only the first quarter of 2007
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# by_ Quarterly( Qtr 1 2007) line chart}
+\NormalTok{Qtr1_}\DecValTok{2007}\NormalTok{ <-}\StringTok{ }\NormalTok{dplyr}\OperatorTok{::}\KeywordTok{filter}\NormalTok{(newDF3, year }\OperatorTok{==}\StringTok{ }\DecValTok{2007}\NormalTok{, quarter }\OperatorTok{==}\StringTok{ }\DecValTok{1}\NormalTok{)}
+  \KeywordTok{ggplot}\NormalTok{(Qtr1_}\DecValTok{2007}\NormalTok{, }\KeywordTok{aes}\NormalTok{(DateTime)) }\OperatorTok{+}
+\StringTok{    }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{x=}\StringTok{'Month of Qtr 1'}\NormalTok{, }\DataTypeTok{y=}\StringTok{'Submeter'}\NormalTok{) }\OperatorTok{+}
+\StringTok{     }\KeywordTok{geom_line}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ Sub_metering_}\DecValTok{1}\NormalTok{, }\DataTypeTok{colour =} \StringTok{"Submeter_1"}\NormalTok{)) }\OperatorTok{+}
+\StringTok{     }\KeywordTok{geom_line}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ Sub_metering_}\DecValTok{2}\NormalTok{, }\DataTypeTok{colour =} \StringTok{"Submeter_2"}\NormalTok{)) }\OperatorTok{+}
+\StringTok{     }\KeywordTok{geom_line}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ Sub_metering_}\DecValTok{3}\NormalTok{, }\DataTypeTok{colour =} \StringTok{"Submeter_3"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Sub_metering_Project_files/figure-latex/Qtr1_2007 Sub_meters Comparison-1.pdf}
+
+
+\end{document}
